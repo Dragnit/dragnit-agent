@@ -9,4 +9,5 @@ sysinfo = "0.39.5"
 local-ip-address = "0.6"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
-ipnet = "2.12.2"
+ipnet = { version = "2.12.2", features = ["serde"] }
+if-addrs = "0.13"

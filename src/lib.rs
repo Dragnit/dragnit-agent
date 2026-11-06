@@ -1,5 +1,6 @@
 use serde::Serialize;
 use local_ip_address::list_afinet_netifas;
+use ipnet::Ipv4Net;
 
 // Memory information struct
 #[derive(Serialize)]
@@ -55,7 +56,17 @@ pub struct DeviceInfo
     pub ip: String,
     pub mac: Option<String>,
     pub hostname: Option<String>,
-    pub state: String,
+    pub icmp_reply: bool,
+    pub arp_state: Option<String>,
+    //pub state: String,
+}
+
+// detetar a interface de rede e a sub-rede
+#[derive(Serialize)]
+pub struct NetworkConfig 
+{
+    pub interface: String,
+    pub subnet: Ipv4Net,
 }
 
 // get network information
