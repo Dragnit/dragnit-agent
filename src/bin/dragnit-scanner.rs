@@ -35,7 +35,7 @@ fn detect_network() -> Option<NetworkConfig>
     None
 }
 
-// Consulta o MAC e o estado de um IP
+// Consulta o MAC e o estado de um IP através do protocolo ARP, usando o comando "ip neigh show <IP> dev <interface>".
 fn neighbor(ip: &str, interface: &str) -> Option<DeviceInfo> 
 {
     let output = Command::new("ip")
@@ -54,19 +54,19 @@ fn neighbor(ip: &str, interface: &str) -> Option<DeviceInfo>
     // Versão simples para o formato que observámos no ASUS
     if partes.len() >= 4 && partes[1] == "lladdr" 
     {
-        return Some(DeviceInfo 
-        {
+        return Some(DeviceInfo {
             ip: partes[0].to_string(),
             mac: Some(partes[2].to_string()),
             hostname: None,
-            state: partes[partes.len() - 1].to_string(),
+            icmp_reply: false,
+            arp_state: Some(partes[partes.len() - 1].to_string()),
         });
     }
 
     None
 }
 
-// Cada thread usa esta função para pesquisar os seus IPs
+// Cada thread usa esta função para pesquisar os seus IPs atraves do protocolo 
 fn scan_ips(ips: Vec<Ipv4Addr>, interface: String,) -> (Vec<Ipv4Addr>, Vec<DeviceInfo>) 
 {
     let mut ips_ativos = Vec::new();
@@ -128,8 +128,12 @@ fn scan_network(network: &NetworkConfig,) -> (Vec<Ipv4Addr>, Vec<DeviceInfo>)
     (ativos1, dispositivos1)
 }
 
-fn arp_scan() {
-    let output = Command::new("arp-scan").args(["--interface=wlan0", "--retry=3", "--localnet"]).output().expect("Não foi possível executar arp-scan");
+fn arp_scan(network: &NetworkConfig) {
+    let interface = format!("--interface={}", network.interface);
+    let subnet = network.subnet.to_string();
+
+    let output = Command::new("arp-scan").args([&interface, "--retry=3", &subnet]).output().expect("Não foi possível executar arp-scan");
+    //let output = Command::new("arp-scan").args(["--interface=wlan0", "--retry=3", "--localnet"]).output().expect("Não foi possível executar arp-scan");
 
     if !output.status.success() 
     {
@@ -143,11 +147,14 @@ fn arp_scan() {
     println!("Resultado do scan ARP:\n{}", texto);
 }
 
-fn main() 
-{
-    arp_scan();
-}
+fn main() {
+    let network = detect_network().expect("ERRO: Não foi possível detetar a rede!");
 
+    println!("Interface detetada: {}", network.interface);
+    println!("Sub-rede detetada: {}", network.subnet);
+
+    arp_scan(&network);
+}
 /*
 fn main() 
 {
